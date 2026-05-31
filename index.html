@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>未来のかわいい目標リスト</title>
+    <!-- 丸くてかわいいフォントを読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <!-- ドラッグ＆ドロップで並び替えを可能にするライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- PWA用メタタグ・iOS Safari対応 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="目標リスト">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/1a1a24/ff9a9e?text=M">
+    <link rel="manifest" href="manifest.json">
+
+    <style>
+        :root {
+            --glass-bg: rgba(30, 30, 35, 0.6); /* 暗いすりガラス */
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            --text-main: #e0e0e0; /* 明るいグレー/白で見やすく */
+            --text-light: #888888; /* サブテキスト */
+            --accent-color: #ff9a9e; /* ダークに映えるかわいいピンク（ネオン風） */
+            --accent-glow: 0 0 12px rgba(255, 154, 158, 0.4);
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: var(--text-main);
+            overflow: hidden; /* 背景アニメーション用 */
+            
+            /* 近未来かわいい・ダークオーロラ背景アニメーション */
+            background: linear-gradient(-45deg, #1a1a24, #2d2d3a, #1f1f2e, #14141c);
+            background-size: 400% 400%;
+            animation: auroraBG 20s ease infinite;
+        }
+
+        @keyframes auroraBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* グラスモーフィズムの基本クラス */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* Safari対応 */
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        header {
+            padding: 20px 16px 10px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 16px 0;
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            letter-spacing: 2px;
+        }
+
+        /* 達成度プログレスバー */
+        .progress-container {
+            padding: 12px 20px;
+            margin-bottom: 16px;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .progress-track {
+            height: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--accent-glow);
+        }
+
+        main {
+            flex: 1;
+            padding: 0 16px 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* リストエリアだけスクロールさせるため */
+        }
+
+        /* タブ切り替え */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-light);
+            font-weight: bold;
+            font-family: inherit;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-shadow: 0 0 8px rgba(255, 154, 158, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 入力エリア */
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid transparent;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            font-size: 16px;
+            font-family: inherit;
+            color: var(--text-main);
+            transition: all 0.3s;
+            outline: none;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        input[type="text"]:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: var(--accent-color);
+            box-shadow: var(--accent-glow);
+        }
+        input[type="text"]::placeholder {
+            color: var(--text-light);
+        }
+        button.add-btn {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: white;
+            border: none;
+            width: 52px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+            transition: transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        button.add-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* リストエリア */
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            /* スクロールバーを見えなくする（スマホライク） */
+            scrollbar-width: none; 
+        }
+        .list-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        ul.idea-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        li.idea-item {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        /* ドラッグしている時のスタイル */
+        li.idea-item.sortable-ghost {
+            opacity: 0.5;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .drag-handle {
+            color: rgba(255,255,255,0.8);
+            font-size: 20px;
+            cursor: grab;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        /* カスタムチェックボックス */
+        .custom-checkbox {
+            position: relative;
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .custom-checkbox input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 28px;
+            width: 28px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--text-light);
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--accent-color);
+            box-shadow: var(--accent-glow);
+        }
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 9px;
+            top: 5px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+        }
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .idea-text {
+            flex: 1;
+            font-size: 16px;
+            line-height: 1.4;
+            transition: all 0.3s;
+            word-break: break-word;
+        }
+        li.idea-item.completed .idea-text {
+            text-decoration: line-through;
+            color: var(--text-light);
+            opacity: 0.6;
+        }
+
+        .delete-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-light);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .delete-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ff4757;
+        }
+
+        /* カスタム確認ダイアログ (alertの代わり) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            padding: 24px;
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+        .modal-content p {
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            font-weight: bold;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 16px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-cancel {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-main);
+        }
+        .btn-delete {
+            background: #ff4757;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>✨ わたしの目標リスト</h1>
+        
+        <div class="progress-container glass-panel">
+            <div class="progress-header">
+                <span id="progressLabel">1日目標の達成度</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('daily')" id="tab-daily">1日</button>
+            <button class="tab-btn" onclick="switchTab('weekly')" id="tab-weekly">1週間</button>
+            <button class="tab-btn" onclick="switchTab('none')" id="tab-none">期限なし</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="ideaInput" placeholder="ここに入力してね..." onkeypress="handleKeyPress(event)">
+            <button class="add-btn" onclick="addIdea()">+</button>
+        </div>
+
+        <div class="list-container">
+            <ul class="idea-list" id="ideaList">
+                <!-- リストがここに生成されます -->
+            </ul>
+        </div>
+    </main>
+
+    <!-- 削除確認用モーダル -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="glass-panel modal-content">
+            <p>この目標を消しちゃう？</p>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">やめる</button>
+                <button class="modal-btn btn-delete" onclick="executeDelete()">消す！</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 状態管理 ---
+        // データの初期化と読み込み
+        let ideas = [];
+        let currentTab = 'daily';
+        let deleteTargetId = null;
+        let sortableInstance = null;
+
+        // データ読み込み（古いバージョンのデータがある場合の移行処理も含む）
+        function loadData() {
+            const savedData = localStorage.getItem('myFutureIdeas_v1');
+            if (savedData) {
+                ideas = JSON.parse(savedData);
+            } else {
+                // 古いアプリ（idea_memo.html）のデータがあれば引き継ぐ
+                const oldData = localStorage.getItem('myIdeas');
+                if (oldData) {
+                    const parsedOld = JSON.parse(oldData);
+                    ideas = parsedOld.map((item, index) => ({
+                        id: item.id,
+                        text: item.text,
+                        completed: item.completed,
+                        category: 'none', // 古いデータは一旦「期限なし」へ
+                        order: index
+                    }));
+                } else {
+                    // 完全な初回起動時のサンプルデータ
+                    ideas = [
+                        { id: 1, text: "腕立て伏せを１日５０回しよう", completed: false, category: 'daily', order: 0 },
+                        { id: 2, text: "本を週に１時間読もう", completed: false, category: 'weekly', order: 1 },
+                        { id: 3, text: "屋内消火栓のポンプの仕組みについて勉強しよう", completed: false, category: 'none', order: 2 }
+                    ];
+                }
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('myFutureIdeas_v1', JSON.stringify(ideas));
+        }
+
+        // --- UI描画処理 ---
+        // タブの切り替え
+        function switchTab(category) {
+            currentTab = category;
+            
+            // タブの見た目更新
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${category}`).classList.add('active');
+            
+            // ラベルの更新
+            const labels = {
+                'daily': '1日目標',
+                'weekly': '1週間目標',
+                'none': '期限なし目標'
+            };
+            document.getElementById('progressLabel').innerText = `${labels[category]}の達成度`;
+            
+            renderIdeas();
+        }
+
+        // リストと進捗バーの描画
+        function renderIdeas() {
+            const listElement = document.getElementById('ideaList');
+            listElement.innerHTML = '';
+
+            // 現在のタブのアイテムだけを抽出し、order順に並び替え
+            const currentIdeas = ideas
+                .filter(idea => idea.category === currentTab)
+                .sort((a, b) => a.order - b.order);
+
+            currentIdeas.forEach(idea => {
+                const li = document.createElement('li');
+                li.className = `glass-panel idea-item ${idea.completed ? 'completed' : ''}`;
+                li.setAttribute('data-id', idea.id); // 並び替え用にIDを持たせる
+                
+                li.innerHTML = `
+                    <div class="drag-handle">≡</div>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" ${idea.completed ? 'checked' : ''} onchange="toggleComplete(${idea.id})">
+                        <span class="checkmark"></span>
+                    </label>
+                    <div class="idea-text">${idea.text}</div>
+                    <button class="delete-btn" onclick="openDeleteModal(${idea.id})">×</button>
+                `;
+                listElement.appendChild(li);
+            });
+
+            updateProgress(currentIdeas);
+            initSortable(); // リスト再描画後にドラッグ＆ドロップを再初期化
+        }
+
+        // 進捗バーの計算と更新
+        function updateProgress(currentIdeas) {
+            const total = currentIdeas.length;
+            const completed = currentIdeas.filter(i => i.completed).length;
+            
+            let percentage = 0;
+            if (total > 0) {
+                percentage = Math.round((completed / total) * 100);
+            }
+
+            document.getElementById('progressText').innerText = `${percentage}%`;
+            document.getElementById('progressFill').style.width = `${percentage}%`;
+        }
+
+        // --- アクション処理 ---
+        function addIdea() {
+            const input = document.getElementById('ideaInput');
+            const text = input.value.trim();
+            
+            if (text !== "") {
+                // 現在のタブ内の最大のorder値を取得（一番下に追加するため）
+                const currentTabIdeas = ideas.filter(i => i.category === currentTab);
+                const maxOrder = currentTabIdeas.length > 0 
+                    ? Math.max(...currentTabIdeas.map(i => i.order)) 
+                    : -1;
+
+                const newIdea = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false,
+                    category: currentTab,
+                    order: maxOrder + 1
+                };
+                
+                ideas.push(newIdea);
+                saveData();
+                input.value = "";
+                renderIdeas();
+            }
+        }
+
+        // エンターキーで追加
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                addIdea();
+            }
+        }
+
+        function toggleComplete(id) {
+            ideas = ideas.map(idea => {
+                if (idea.id === id) {
+                    return { ...idea, completed: !idea.completed };
+                }
+                return idea;
+            });
+            saveData();
+            renderIdeas();
+        }
+
+        // --- カスタムモーダル（削除確認）処理 ---
+        function openDeleteModal(id) {
+            deleteTargetId = id;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal() {
+            deleteTargetId = null;
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function executeDelete() {
+            if (deleteTargetId !== null) {
+                ideas = ideas.filter(idea => idea.id !== deleteTargetId);
+                saveData();
+                renderIdeas();
+                closeModal();
+            }
+        }
+
+        // --- 並び替え（SortableJS）処理 ---
+        function initSortable() {
+            const listElement = document.getElementById('ideaList');
+            
+            // 既にインスタンスがあれば破棄（重複防止）
+            if (sortableInstance) {
+                sortableInstance.destroy();
+            }
+
+            sortableInstance = new Sortable(listElement, {
+                handle: '.drag-handle', // ≡マークを掴んだ時だけ動くようにする
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    // 並び替えが終わった時に呼ばれる
+                    const itemEls = listElement.querySelectorAll('.idea-item');
+                    
+                    // 画面の並び順通りに、現在のタブのアイテムの order を振り直す
+                    itemEls.forEach((el, index) => {
+                        const id = parseInt(el.getAttribute('data-id'));
+                        const ideaIndex = ideas.findIndex(i => i.id === id);
+                        if (ideaIndex > -1) {
+                            ideas[ideaIndex].order = index;
+                        }
+                    });
+                    
+                    saveData(); // 新しい順番を保存
+                    // ※ここで再度renderIdeasを呼ぶと一瞬チラつくので、保存だけ行う
+                }
+            });
+        }
+
+        // --- 初期化処理 ---
+        window.onload = () => {
+            // PWA用のService Worker登録（オフライン対応の裏方）
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('PWAの準備完了(SW登録成功)'))
+                    .catch(err => console.log('SW登録失敗:', err));
+            }
+
+            loadData();
+            switchTab('daily'); // 初期表示は「1日」タブ
+        };
+    </script>
+</body>
+</html>
